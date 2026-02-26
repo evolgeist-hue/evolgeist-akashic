@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Evolgeist",
+    "slug": "evolgeist",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0B0E14"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.evolgeist.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B0E14"
+      },
+      "package": "com.evolgeist.app"
+    },
+    "extra": {
+      "supabaseUrl": "SUA_URL_AQUI_OU_MANTENHA_COMO_VARIAVEL",
+      "supabaseAnonKey": "SUA_KEY_AQUI_OU_MANTENHA_COMO_VARIAVEL",
+      "eas": {
+        "projectId": "3f677972-6b6e-4758-846b-b40a2382533e"
+      }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "owner": "evolgeist"
+  }
+}

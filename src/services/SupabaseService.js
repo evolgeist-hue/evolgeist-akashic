@@ -1,0 +1,7 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Teste direto: Cole suas credenciais reais aqui entre as aspas
+const supabaseUrl = 'https://angtaeexbexxbpjvebhe.supabase.co'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuZ3RhZWV4YmV4eGJwanZlYmhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTg4OTIsImV4cCI6MjA4NzA5NDg5Mn0.YJxUIC_s46yz8E9gZ67Tt0BNvbsw2Ly8srWkwcO13oo'
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
