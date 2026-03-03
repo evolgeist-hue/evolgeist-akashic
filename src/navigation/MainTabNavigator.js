@@ -11,20 +11,43 @@ import ProfileScreen from '../screens/main/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
+// 🔧 MAPEAMENTO CORRETO: nomes IGUAIS às rotas
+const icons = {
+  Home: 'home',
+  Cosmos: 'planet',
+  Histórico: 'journal',
+  Mercado: 'sparkles',
+  Perfil: 'person',
+};
+
 export default function MainTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: Colors.background, height: 70, borderTopColor: 'rgba(212,175,55,0.2)' },
+        tabBarStyle: {
+          backgroundColor: Colors.background,
+          height: 70,
+          borderTopColor: 'rgba(212,175,55,0.2)',
+        },
         tabBarActiveTintColor: Colors.accent,
         tabBarIcon: ({ focused, color, size }) => {
-          const icons = { 'Início': 'home', 'Cosmos': 'planet', 'Histórico': 'journal', 'Mercado': 'sparkles', 'Perfil': 'person' };
-          return <Ionicons name={focused ? icons[route.name] : icons[route.name] + '-outline'} size={size} color={color} />;
-        }
+          const iconName = icons[route.name];
+
+          // 🔒 Proteção extra (boa prática)
+          if (!iconName) return null;
+
+          return (
+            <Ionicons
+              name={focused ? iconName : `${iconName}-outline`}
+              size={size}
+              color={color}
+            />
+          );
+        },
       })}
     >
-      <Tab.Screen name="Início" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Cosmos" component={CosmosScreen} />
       <Tab.Screen name="Histórico" component={HistoryScreen} />
       <Tab.Screen name="Mercado" component={MarketScreen} />

@@ -2,20 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-
+import AkashicChatScreen from "./src/screens/main/AkashicChatScreen";
 import { supabase } from './src/services/SupabaseService';
 
-// Navegação principal
+// Navegação principal e Telas
 import MainTabNavigator from './src/navigation/MainTabNavigator';
-
-// Telas de autenticação
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
-
-// Telas do fluxo principal
 import RitualScreen from './src/screens/main/RitualScreen';
-import HistoryScreen from './src/screens/HistoryScreen'; 
-// ⚠️ Ajuste o caminho acima se seu History estiver em /main
+import HistoryScreen from './src/screens/HistoryScreen';
+import HomeScreen from './src/screens/main/HomeScreen'; // Certifique-se que o import existe
+
+// 🔒 MODO SEGURO PARA BUILD (APK nunca quebra)
+const USE_MOCK_MODE = true;
 
 const Stack = createStackNavigator();
 
@@ -24,7 +23,6 @@ export default function App() {
   const [loadingSession, setLoadingSession] = useState(true);
 
   useEffect(() => {
-    // 1. Busca sessão inicial
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
@@ -37,22 +35,23 @@ export default function App() {
         setLoadingSession(false);
       });
 
-    // 2. Escuta login / logout / signup
     const { data: { subscription } } =
       supabase.auth.onAuthStateChange((_event, session) => {
         setSession(session);
       });
 
-    // 3. Cleanup
     return () => {
       if (subscription) subscription.unsubscribe();
     };
   }, []);
 
-  // 🔒 Evita flash de tela / bugs de navegação
+  // Função SafeHome para envolver a HomeScreen
+  function SafeHome({ navigation }) {
+    return <HomeScreen navigation={navigation} />;
+  }
+
   if (loadingSession) {
     return null; 
-    // depois podemos colocar um Splash bonito aqui
   }
 
   return (
@@ -63,9 +62,22 @@ export default function App() {
         {session && session.user ? (
           // 🔐 FLUXO AUTENTICADO
           <Stack.Group>
+            {/* Se você usa o MainTabNavigator como base, a Home geralmente está dentro dele.
+               Mas conforme solicitado, incluímos a SafeHome aqui.
+            */}
             <Stack.Screen name="Main" component={MainTabNavigator} />
-            <Stack.Screen name="Ritual" component={RitualScreen} />
-            <Stack.Screen name="OracleHistory" component={HistoryScreen} />
+<Stack.Screen name="AkashicChat" component={AkashicChatScreen} />
+            {!USE_MOCK_MODE && (
+              <>
+                <Stack.Screen name="OracleHistory" component={HistoryScreen} />
+                <Stack.Screen name="Ritual" component={RitualScreen} />
+              </>
+            )}
+            
+            {/* Caso queira que History e Ritual funcionem mesmo no MOCK_MODE (para teste), 
+               mova-os para fora do bloco !USE_MOCK_MODE 
+            */}
+            
           </Stack.Group>
         ) : (
           // 🔓 FLUXO NÃO AUTENTICADO

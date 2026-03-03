@@ -1,3 +1,4 @@
+import { gerarPerfilApometrico } from "../../services/ApometriaService";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -7,38 +8,52 @@ import {
   ActivityIndicator,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ImageBackground,
+  Image,
   Modal
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "../../constants/Colors";
 
-import { supabase } from "../../services/SupabaseService";
-import {
-  VisionService,
-  gerarInsightOraculo,
-  adaptarContextoPorRituais
-} from "../../services/VisionService";
+/* ================================
+   CONFIGURAÇÃO GLOBAL
+================================ */
+import { AppConfig } from "../../config/AppConfig";
 
-import { calcularFaseSimbolica } from "../../services/PhaseService";
-import { calcularFrequenciaDinamica } from "../../services/FrequencyService";
+const { USE_MOCK_DATA } = AppConfig;
+
+/* ================================
+   DADOS MOCK (SEM BACKEND)
+================================ */
+const MOCK_USER = {
+  id: "mock-user",
+  name: "Viajante",
+  full_name: "Viajante Evolgeist",
+  stars: 30
+};
 
 export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState({
-    id: "",
-    name: "",
-    full_name: "",
-    stars: 0
-  });
+  const [userData, setUserData] = useState(MOCK_USER);
 
   const [oracleModal, setOracleModal] = useState({
     visible: false,
     image: null,
     insight: ""
   });
+
+  // 👇 Novo useEffect para gerar perfil apométrico
+  useEffect(() => {
+    const perfil = gerarPerfilApometrico({
+      nome: "Teste",
+      dataNascimento: "1990-06-15",
+      horaNascimento: "08",
+      localNascimento: "Brasil"
+    });
+
+    console.log("PERFIL APOMÉTRICO:", perfil);
+  }, []);
 
   useEffect(() => {
     initializeHome();
@@ -47,115 +62,27 @@ export default function HomeScreen({ navigation }) {
   async function initializeHome() {
     setLoading(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return setLoading(false);
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    if (profile) {
-      setUserData({
-        id: user.id,
-        name: profile.full_name?.split(" ")[0] || "Viajante",
-        full_name: profile.full_name,
-        stars: profile.stars || 0
-      });
+    if (USE_MOCK_DATA) {
+      setUserData(MOCK_USER);
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    // 🔒 Código real entra aqui no futuro
   }
 
   async function handleOracleAction() {
-    if (userData.stars < 10) {
-      return Alert.alert(
-        "Estrelas insuficientes",
-        "Você precisa de 10 estrelas."
-      );
-    }
-
-    const imageUri = await VisionService.captureImage();
-    if (!imageUri) return;
-
-    setLoading(true);
-
-    try {
-      // 🔮 Histórico do Oráculo
-      const { data: historicoDB } = await supabase
-        .from("oracle_history")
-        .select("insight_text")
-        .eq("user_id", userData.id)
-        .order("created_at", { ascending: false })
-        .limit(3);
-
-      const ultimosInsights =
-        historicoDB?.map(h => h.insight_text).join("\n\n") || "";
-
-      // 🔥 Rituais recentes
-      const { data: rituaisRecentes } = await supabase
-        .from("ritual_logs")
-        .select("intencao")
-        .eq("user_id", userData.id)
-        .order("performed_at", { ascending: false })
-        .limit(7);
-
-      const contextoRitual = adaptarContextoPorRituais(rituaisRecentes || []);
-
-      // 📷 Upload da imagem
-      const publicUrl = await VisionService.uploadToStorage(
-        imageUri,
-        userData.id
-      );
-
-      // 🌀 Frequência e fase
-      const faseSimbolica = calcularFaseSimbolica();
-      const frequenciaAtual = calcularFrequenciaDinamica({
-        frequenciaBase: 432,
-        faseSimbolica,
-        horaAtual: new Date().getHours(),
-        nivelInteracao: 1
-      });
-
-      // 🧠 Insight
-      const insight = await gerarInsightOraculo({
-        nome: userData.full_name,
-        frequencia: frequenciaAtual,
-        fase: faseSimbolica,
-        dataHoje: new Date().toLocaleDateString(),
-        ultimosInsights,
-        ...contextoRitual
-      });
-
-      // 💾 Persistência
-      await supabase.from("oracle_history").insert({
-        user_id: userData.id,
-        image_url: publicUrl,
-        insight_text: insight
-      });
-
-      await supabase
-        .from("profiles")
-        .update({ stars: userData.stars - 10 })
-        .eq("id", userData.id);
-
-      setUserData(prev => ({
-        ...prev,
-        stars: prev.stars - 10
-      }));
-
+    if (USE_MOCK_DATA) {
       setOracleModal({
         visible: true,
-        image: publicUrl,
-        insight
+        image: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986",
+        insight:
+          "Este é um insight simbólico em modo de preparação.\n\nO Oráculo desperta em breve.\n\nPermaneça presente."
       });
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Erro", "Falha na conexão simbólica.");
+      return;
     }
 
-    setLoading(false);
+    // 🔒 Código real entra aqui no futuro
   }
 
   if (loading) {
@@ -169,29 +96,21 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.welcome}>Olá, {userData.name}</Text>
 
           <View style={styles.headerRight}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("OracleHistory")}
-              style={{ marginRight: 15 }}
-            >
-              <Ionicons
-                name="journal-outline"
-                size={24}
-                color={Colors.accent}
-              />
-            </TouchableOpacity>
-
             <View style={styles.starBadge}>
               <Text style={styles.starText}>✨ {userData.stars}</Text>
             </View>
           </View>
         </View>
 
+        {/* TÍTULO */}
         <Text style={styles.title}>EVOLGEIST</Text>
 
+        {/* CARD ORÁCULO */}
         <TouchableOpacity style={styles.card} onPress={handleOracleAction}>
           <ImageBackground
             source={{
@@ -210,29 +129,52 @@ export default function HomeScreen({ navigation }) {
           </ImageBackground>
         </TouchableOpacity>
 
+        {/* CARD RITUAL */}
         <TouchableOpacity
           style={[styles.card, { backgroundColor: "#111" }]}
-          onPress={() => navigation.navigate("Ritual")}
+          onPress={() => {
+            if (USE_MOCK_DATA) {
+              alert("Funcionalidade em preparação.");
+              return;
+            }
+            navigation.navigate("Ritual");
+          }}
         >
           <View style={styles.cardOverlay}>
             <Ionicons name="flame-outline" size={40} color={Colors.accent} />
             <Text style={styles.cardTitle}>RITUAL DIÁRIO</Text>
           </View>
         </TouchableOpacity>
+
+        {/* CARD REGISTRO AKÁSHICO */}
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: "#0F1A24" }]}
+          onPress={() => navigation.navigate("AkashicChat")}
+        >
+          <View style={styles.cardOverlay}>
+            <Ionicons name="infinite-outline" size={40} color={Colors.accent} />
+            <Text style={styles.cardTitle}>REGISTRO AKÁSHICO</Text>
+            <Text style={{ color: "#AAA", marginTop: 6, fontSize: 12 }}>
+              Acesso consciente à memória da alma
+            </Text>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
 
+      {/* MODAL DO ORÁCULO */}
       <Modal visible={oracleModal.visible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {oracleModal.image && (
-              <ImageBackground
-                source={{ uri: oracleModal.image }}
-                style={styles.preview}
-                imageStyle={{ borderRadius: 15 }}
-              />
-            )}
-
             <ScrollView>
+              {/* IMAGEM DO ORÁCULO */}
+              {oracleModal.image && (
+                <Image
+                  source={{ uri: oracleModal.image }}
+                  style={styles.modalImage}
+                  resizeMode="cover"
+                />
+              )}
+
               <Text style={styles.insight}>{oracleModal.insight}</Text>
             </ScrollView>
 
@@ -344,10 +286,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.accent
   },
 
-  preview: {
-    width: "100%",
+  modalImage: {
     height: 200,
-    marginBottom: 15
+    marginBottom: 20,
+    borderRadius: 20
   },
 
   insight: {
